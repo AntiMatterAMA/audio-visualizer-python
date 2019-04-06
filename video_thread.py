@@ -21,7 +21,7 @@ class Worker(QtCore.QObject):
 
   @pyqtSlot(str, str, QtGui.QFont, int, int, int, int, tuple, tuple, str, str)
   def createVideo(self, backgroundImage, titleText, titleFont, fontSize, alignment,\
-                    xOffset, yOffset,  textColor, visColor, inputFile, outputFile):
+                    xOffset, yOffset,  textColor, visColor, inputFile, outputFile, frameSize):
     # print('worker thread id: {}'.format(QtCore.QThread.currentThreadId()))
     def getBackgroundAtIndex(i):
         return self.core.drawBaseImage(
@@ -61,7 +61,7 @@ class Worker(QtCore.QObject):
        '-y', # (optional) means overwrite the output file if it already exists.
        '-f', 'rawvideo',
        '-vcodec', 'rawvideo',
-       '-s', '1280x720', # size of one frame
+       '-s', framesize, # size of one frame (widthxheight)
        '-pix_fmt', 'rgb24',
        '-r', '30', # frames per second
        '-i', '-', # The input comes from a pipe

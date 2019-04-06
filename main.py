@@ -15,7 +15,7 @@ import preview_thread, core, video_thread
 
 class Command(QtCore.QObject):
   
-  videoTask = QtCore.pyqtSignal(str, str, QFont, int, int, int, int, tuple, tuple, str, str)
+  videoTask = QtCore.pyqtSignal(str, str, QFont, int, int, int, int, tuple, tuple, str, str, str)
   
   def __init__(self):
     QtCore.QObject.__init__(self)
@@ -33,6 +33,7 @@ class Command(QtCore.QObject):
     self.parser.add_argument('-x', '--xposition', dest='xposition', help='x position', required=False)
     self.parser.add_argument('-y', '--yposition', dest='yposition', help='y position', required=False)
     self.parser.add_argument('-a', '--alignment', dest='alignment', help='title alignment', required=False, type=int, choices=[0, 1, 2])
+    self.parser.add_argument('-S', '--framesize', dest='framesize', help='framesize', required=False, type=str)
     self.args = self.parser.parse_args()
 
     self.settings = QSettings('settings.ini', QSettings.IniFormat)
@@ -69,7 +70,7 @@ class Command(QtCore.QObject):
       self.textY = int(self.args.yposition)
     else:
       self.textY = int(self.settings.value("yPosition", 375))
-
+    
     ffmpeg_cmd = self.settings.value("ffmpeg_cmd", expanduser("~"))
 
     self.videoThread = QtCore.QThread(self)
@@ -89,7 +90,8 @@ class Command(QtCore.QObject):
       self.textColor,
       self.visColor,
       self.args.input,
-      self.args.output)
+      self.args.output,
+      self.args.framesize)
 
   def videoCreated(self):
     self.videoThread.quit()
@@ -104,13 +106,14 @@ class Command(QtCore.QObject):
     self.settings.setValue("yPosition", str(self.textY))
     self.settings.setValue("visColor", '%s,%s,%s' % self.visColor)
     self.settings.setValue("textColor", '%s,%s,%s' % self.textColor)
+    self.settings.setValue("frameSize", str(self.framesize))
     sys.exit(0)
 
 class Main(QtCore.QObject):
 
-  newTask = QtCore.pyqtSignal(str, str, QFont, int, int, int, int, tuple, tuple)
+  newTask = QtCore.pyqtSignal(str, str, QFont, int, int, int, int, tuple, tuple, str)
   processTask = QtCore.pyqtSignal()
-  videoTask = QtCore.pyqtSignal(str, str, QFont, int, int, int, int, tuple, tuple, str, str)
+  videoTask = QtCore.pyqtSignal(str, str, QFont, int, int, int, int, tuple, tuple, str, str, str)
 
   def __init__(self, window):
     QtCore.QObject.__init__(self)
@@ -148,6 +151,7 @@ class Main(QtCore.QObject):
     window.pushButton_selectInput.setText("Select Input Music File")
     window.pushButton_selectOutput.setText("Select Output Video File")
     window.pushButton_selectBackground.setText("Select Background Image")
+    window.lineEdit_framesize.setText("1080x720")
     window.label_font.setText("Title Font")
     window.label_alignment.setText("Title Options")
     window.label_colorOptions.setText("Colors")
@@ -155,6 +159,7 @@ class Main(QtCore.QObject):
     window.label_title.setText("Title Text")
     window.label_textColor.setText("Text:")
     window.label_visColor.setText("Visualizer:")
+    window.label_framesize.setText("Frame Size:")
     window.pushButton_createVideo.setText("Create Video")
     window.groupBox_create.setTitle("Create")
     window.groupBox_settings.setTitle("Settings")
@@ -217,6 +222,7 @@ class Main(QtCore.QObject):
     self.settings.setValue("yPosition", str(self.window.textYSpinBox.value()))
     self.settings.setValue("visColor", self.window.lineEdit_visColor.text())
     self.settings.setValue("textColor", self.window.lineEdit_textColor.text())
+    self.settings.setValue("frameSize", self.window.lineEdit_framesize.text())
 
   def openInputFileDialog(self):
     inputDir = self.settings.value("inputDir", expanduser("~"))
@@ -271,7 +277,8 @@ class Main(QtCore.QObject):
       core.Core.RGBFromString(self.window.lineEdit_textColor.text()),
       core.Core.RGBFromString(self.window.lineEdit_visColor.text()),
       self.window.label_input.text(),
-      self.window.label_output.text())
+      self.window.label_output.text(),
+      self.window.lineEdit_framesize.text())
     
 
   def progressBarUpdated(self, value):
@@ -293,7 +300,8 @@ class Main(QtCore.QObject):
       self.window.textXSpinBox.value(),
       self.window.textYSpinBox.value(),
       core.Core.RGBFromString(self.window.lineEdit_textColor.text()),
-      core.Core.RGBFromString(self.window.lineEdit_visColor.text()))
+      core.Core.RGBFromString(self.window.lineEdit_visColor.text()),
+      self.window.lineEdit_framesize.text())
     # self.processTask.emit()
 
   def showPreviewImage(self, image):
